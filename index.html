@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Misses Styles | ملابس حريمي</title>
+<script>document.documentElement.classList.add("js")</script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="ann" class="ann" hidden></div>
+<header>
+  <a href="#top" class="logo"><img class="logoImg" src="images/logo.png" alt="Misses Styles"></a>
+  <nav><a href="#shop">المتجر</a><a href="#about">عن Misses</a><a href="#contact">تواصل معنا</a></nav>
+  <button class="ibtn" id="open" aria-label="السلة">🛍️<span id="count">0</span></button>
+</header>
+<div class="hero wh" id="top">
+  <video class="hv" id="hv" autoplay muted loop playsinline preload="auto" poster="media/poster.jpg" src="media/hero.mp4" aria-hidden="true"></video>
+  <div class="hc">
+    <h1 class="sr">Misses Styles</h1>
+    <div class="lp"><img class="logoImg" src="images/logo.png" alt="Misses Styles"><div class="tag" id="hTag"></div></div>
+    <a href="#shop" class="btn" id="hBtn"></a>
+  </div>
+</div>
+<section id="since" class="since"><span class="sbadge" id="snBadge"></span><h2 id="snTitle"></h2><p class="sntext" id="snText"></p>
+  <div class="vals"><div class="val"><i>✨</i><b id="v1T"></b><span id="v1S"></span></div><div class="val"><i>🤍</i><b id="v2T"></b><span id="v2S"></span></div><div class="val"><i>💬</i><b id="v3T"></b><span id="v3S"></span></div></div></section>
+<div id="offers" class="offers" hidden></div>
+<section id="seasons"><h2 id="seTitle"></h2><p class="sub" id="seSub"></p>
+  <div class="seasons">
+    <a href="#shop" class="sc summer" data-s="summer"><img class="sbg" id="sumI" alt="" hidden><span class="sem">☀️</span><span class="st"><span class="cnt" id="sumC"></span><b id="sumT"></b><small id="sumS"></small><em>تسوقي الركن ←</em></span></a>
+    <a href="#shop" class="sc winter" data-s="winter"><img class="sbg" id="winI" alt="" hidden><span class="sem">❄️</span><span class="st"><span class="cnt" id="winC"></span><b id="winT"></b><small id="winS"></small><em>تسوقي الركن ←</em></span></a>
+  </div></section>
+<section id="shop"><h2 id="sTitle"></h2><p class="sub" id="sSub"></p><div class="filters" id="filters"></div><div class="grid" id="grid"></div></section>
+<section id="about" class="about"><img class="logoImg" src="images/logo.png" alt="Misses Styles"><h2 id="aTitle"></h2><p id="aText"></p></section>
+<section id="contact"><h2 id="cTitle"></h2><p class="sub" id="cSub"></p><div class="contact" id="contactBox"></div></section>
+<footer><div class="ty" id="fTitle"></div><small id="fText"></small></footer>
+<div id="ov"></div>
+<aside id="cart"><div class="row"><h3>سلة التسوق</h3><button class="ibtn" id="close">✕</button></div><div id="items"></div><div class="total">الإجمالي: <span id="total">0</span> ج.م</div><button class="btn" id="order">إتمام الطلب</button></aside>
+<div id="co" class="modal"><div class="box">
+  <button class="ibtn x" id="coClose">✕</button>
+  <form id="coForm"><h3 class="serif" style="font-size:1.6rem">إتمام الطلب</h3>
+    <div class="review"><b>طلبك:</b><div id="rv"></div><button type="button" class="btn s" id="coEdit">✏️ تعديل الطلب</button></div>
+    <input name="name" placeholder="الاسم بالكامل" required maxlength="80">
+    <input name="phone" type="tel" placeholder="رقم الموبايل" required maxlength="16">
+    <select name="governorate" id="gov" required><option value="">المحافظة</option></select>
+    <textarea name="address" placeholder="العنوان بالتفصيل" required maxlength="300"></textarea>
+    <textarea name="notes" placeholder="ملاحظات (اختياري)" maxlength="300"></textarea>
+    <div class="cpn"><input id="cpn" placeholder="كود الخصم (اختياري)" maxlength="30"><button type="button" class="btn" id="cpBtn">تطبيق</button></div><div id="cpMsg" class="muted"></div>
+    <div class="pays">
+      <label data-p="cod"><input type="radio" name="payment" value="cod" checked> الدفع عند الاستلام</label>
+      <label data-p="vodafone"><input type="radio" name="payment" value="vodafone"> فودافون كاش</label>
+      <label data-p="instapay"><input type="radio" name="payment" value="instapay"> إنستا باي</label>
+    </div>
+    <div id="payNote" class="muted" hidden></div>
+    <div id="payInfo" class="payinfo" hidden></div>
+    <input name="ref" id="ref" placeholder="رقم عملية التحويل أو الرقم اللي حولتي منه" hidden maxlength="60">
+    <div class="total" id="coSum"></div>
+    <div id="err" class="err"></div>
+    <button class="btn" id="coSend" style="width:100%">تأكيد الطلب</button>
+  </form>
+  <div id="done" hidden></div>
+</div></div>
+<script src="script.js"></script>
+</body>
+</html>

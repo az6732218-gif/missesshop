@@ -1,0 +1,92 @@
+<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>لوحة التحكم | Misses Styles</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#fbf5f7;color:#53413d;font-family:Tahoma,Arial,sans-serif;padding:14px;line-height:1.6}
+h1,h2,h3{color:#9c6265;margin:8px 0}.wrap{max-width:1050px;margin:auto}
+input,select,textarea,button{font:inherit;padding:8px 12px;border:1px solid #efdcd8;border-radius:10px;background:#fff;color:inherit}
+input[type=checkbox]{width:auto}textarea{width:100%;min-height:70px}button{background:#9c6265;color:#fff;border:0;cursor:pointer}button.s{background:#f8e5df;color:#53413d}button.d{background:#b3261e}button.m{padding:3px 9px;font-size:.8rem}
+.card{background:#fff;border:1px solid #efdcd8;border-radius:14px;padding:14px;margin:10px 0}
+.top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}.tabs{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap}
+.tag{display:inline-block;background:#f8e5df;border-radius:20px;padding:2px 12px;font-size:.85rem}.muted{color:#8a7571;font-size:.9rem}
+.f{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}.stats div{background:#fff;border:1px solid #efdcd8;border-radius:14px;padding:12px;text-align:center}.stats b{display:block;font-size:1.5rem;color:#9c6265}
+.pc{display:grid;grid-template-columns:110px 1fr;gap:12px}.pc img,.pv{width:110px;height:130px;object-fit:cover;border-radius:10px;background:#f8e5df}
+.fld{display:flex;flex-direction:column;gap:3px;margin:6px 0}.fld label{font-size:.9rem;color:#8a7571}
+#msg{position:sticky;top:0;z-index:5;min-height:1.6em;font-weight:700}.ok{color:#2e7d32}.er{color:#b3261e}.pv.l{object-fit:contain;height:70px;width:auto;max-width:220px}
+</style></head><body><div class="wrap">
+<div id="login" class="card"><h1>تسجيل الدخول</h1><div class="f"><input id="un" placeholder="اسم المستخدم" autocomplete="username"><input id="pw" type="password" placeholder="كلمة السر" autocomplete="current-password"><button id="go">دخول</button></div><div id="le" class="er"></div></div>
+<div id="app" hidden>
+ <div class="top"><h1>لوحة تحكم Misses Styles</h1><span class="f"><a href="/" target="_blank"><button class="s">عرض الموقع</button></a><button class="s" id="out">خروج</button></span></div>
+ <div class="tabs" id="tabs"></div><div id="msg"></div><div id="body"></div>
+</div></div>
+<script>
+const $=id=>document.getElementById(id);let T=sessionStorage.getItem("t")||"";
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const U=v=>/^https?:/.test(v)?v:"/"+v;
+const say=(m,ok=true)=>{$("msg").className=ok?"ok":"er";$("msg").textContent=m};
+const api=async(u,m="GET",b)=>{const r=await fetch("/api/admin/"+u,{method:m,headers:{"Content-Type":"application/json",Authorization:"Bearer "+T},body:b?JSON.stringify(b):undefined});if(r.status===401&&u!=="password"){show(false);throw 0}const d=await r.json();if(!r.ok)throw new Error(d.error||"خطأ");return d};
+const run=p=>p.then(()=>say("تم ✓")).catch(e=>e&&say(e.message,false));
+function show(ok){$("login").hidden=ok;$("app").hidden=!ok;if(!ok){T="";sessionStorage.removeItem("t")}}
+$("go").onclick=async()=>{const r=await fetch("/api/admin/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:$("un").value,password:$("pw").value})});const d=await r.json();if(!r.ok){$("le").textContent=d.error;return}T=d.token;sessionStorage.setItem("t",T);show(true);tab("orders")};
+$("pw").onkeydown=$("un").onkeydown=e=>e.key==="Enter"&&$("go").click();$("out").onclick=()=>{api("logout","POST").catch(()=>{});show(false)};
+const TABS={orders:["الطلبات",loadOrders],products:["المنتجات",loadProds],offers:["العروض والكوبونات",loadOffers],settings:["إعدادات الموقع",loadSettings],security:["الأمان",loadSec]};
+function tab(k){$("tabs").innerHTML=Object.entries(TABS).map(([x,v])=>`<button class="${x===k?"":"s"}" onclick="tab('${x}')">${v[0]}</button>`).join("");say("");TABS[k][1]().catch(e=>e&&say(e.message,false))}
+// رفع الملفات
+const shrink=f=>new Promise((ok,no)=>{const im=new Image();im.onload=()=>{const k=Math.min(1,1400/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=im.width*k;c.height=im.height*k;c.getContext("2d").drawImage(im,0,0,c.width,c.height);c.toBlob(b=>ok(b),f.type==="image/png"?"image/png":"image/jpeg",.86)};im.onerror=()=>no(new Error("الصورة غير صالحة"));im.src=URL.createObjectURL(f)});
+function pick(kind,cb){const i=document.createElement("input");i.type="file";i.accept=kind==="video"?"video/mp4,video/webm":"image/*";i.onchange=async()=>{const f=i.files[0];if(!f)return;say("جاري الرفع... استني");try{const blob=kind==="image"?await shrink(f):f;const r=await fetch("/api/admin/upload?kind="+kind,{method:"POST",headers:{Authorization:"Bearer "+T,"Content-Type":"application/octet-stream"},body:blob}),d=await r.json();if(!r.ok)throw new Error(d.error);cb(d.path);say("تم الرفع ✓ — اضغطي حفظ عشان يتثبت")}catch(e){say(e.message,false)}};i.click()}
+// ---- الطلبات
+let OSF="";
+async function loadOrders(){
+  const d=await api("orders"),all=d.orders,o=OSF?all.filter(x=>x.status===OSF):all,live=all.filter(x=>x.status!=="ملغي");
+  $("body").innerHTML=`<div class="stats"><div><b>${all.length}</b>كل الطلبات</div><div><b>${all.filter(x=>x.status==="جديد").length}</b>جديدة</div><div><b>${live.reduce((a,x)=>a+x.total,0)}</b>إجمالي المبيعات ج.م</div></div>
+  <div class="f" style="margin:10px 0"><label>عرض:</label><select onchange="OSF=this.value;loadOrders()"><option value="">كل الحالات</option>${d.statuses.map(s=>`<option ${s===OSF?"selected":""}>${s}</option>`).join("")}</select></div>`+
+  o.map(o=>`<div class="card"><div class="top"><b>طلب #${o.id}</b><span class="muted">${esc(o.created)}</span></div>
+  <div>${esc(o.name)} — <a href="tel:${esc(o.phone)}">${esc(o.phone)}</a> — ${esc(o.governorate)}</div><div class="muted">${esc(o.address)}${o.notes?" | ملاحظات العميلة: "+esc(o.notes):""}</div>
+  <div>${o.items.map(i=>`${esc(i.name)}${i.size?" مقاس "+esc(i.size):""}${i.color?" لون "+esc(i.color):""} × ${i.qty}`).join("<br>")}</div>
+  <div>الإجمالي: <b>${o.total}</b> ج.م (شحن ${o.shipping}${o.coupon?` — كود ${esc(o.coupon)}: −${o.discount}`:""}) — <span class="tag">${esc(d.payments[o.payment])}</span>${o.ref?` رقم التحويل: <b>${esc(o.ref)}</b>`:""}</div>
+  <div class="f" style="margin-top:8px"><select onchange="run(api('orders/${o.id}','PATCH',{status:this.value}))">${d.statuses.map(s=>`<option ${s===o.status?"selected":""}>${s}</option>`).join("")}</select>
+  <input placeholder="ملاحظة داخلية (مش بتظهر للعميلة)" style="flex:1;min-width:160px" maxlength="300" value="${esc(o.note)}" onchange="run(api('orders/${o.id}','PATCH',{note:this.value}))">
+  <a target="_blank" href="https://wa.me/2${esc(o.phone.replace(/\D/g,""))}"><button class="s">واتساب للعميلة</button></a><button class="d" onclick="if(confirm('حذف الطلب نهائيًا؟'))api('orders/${o.id}','DELETE').then(loadOrders)">حذف</button></div></div>`).join("")||"<p>مفيش طلبات</p>";
+}
+// ---- المنتجات
+const pcard=p=>`<div class="card pc" data-id="${p.id||""}"><img src="${U(p.img||"images/p1.svg")}" class="pi">
+ <div><div class="f"><div class="fld"><label>الاسم</label><input class="n" value="${esc(p.name)}"></div><div class="fld"><label>السعر الأصلي</label><input class="p" type="number" style="width:100px" value="${p.price||""}" oninput="fp(this)"></div>
+ <div class="fld"><label>خصم %</label><input class="dc" type="number" min="0" max="95" style="width:80px" value="${p.discount||0}" oninput="fp(this)"></div><div class="fld"><label>القسم</label><input class="c" list="cats" value="${esc(p.category)}"></div><div class="fld"><label>الموسم</label><select class="se"><option value="">كل المواسم</option><option value="summer" ${p.season==="summer"?"selected":""}>☀️ صيفي</option><option value="winter" ${p.season==="winter"?"selected":""}>❄️ شتوي</option></select></div><div class="fld"><label>شارة مخصصة (مثلًا: جديد / خصم خاص)</label><input class="bg" maxlength="20" value="${esc(p.badge||"")}"></div></div>
+ <div class="fld"><label>المقاسات (مفصولة بفاصلة — فاضي لو مفيش)</label><div class="f"><input class="sz" style="flex:1;min-width:150px" value="${esc(p.sizes)}"><button class="s m" onclick="ps(this,'S,M,L,XL')">S-XL</button><button class="s m" onclick="ps(this,'38,40,42,44')">38-44</button><button class="s m" onclick="ps(this,'Free Size')">Free</button></div></div>
+ <div class="fld"><label>ألوان القطعة (مفصولة بفاصلة)</label><input class="cl" value="${esc(p.colors)}"></div>
+ <div class="f"><input class="i" value="${esc(p.img||"images/p1.svg")}" style="flex:1;min-width:150px" oninput="this.closest('.pc').querySelector('.pi').src=U(this.value)"><button class="s" onclick="const c=this.closest('.pc');pick('image',x=>{c.querySelector('.i').value=x;c.querySelector('.pi').src=U(x)})">رفع صورة</button></div>
+ <div class="f" style="margin-top:8px"><label><input type="checkbox" class="a" ${p.active!==0?"checked":""}> ظاهر</label><label><input type="checkbox" class="so" ${p.soldout?"checked":""}> نفذت الكمية</label><b class="fp"></b><button onclick="saveP(this)">${p.id?"حفظ":"إضافة المنتج"}</button>${p.id?`<button class="d" onclick="if(confirm('حذف المنتج؟'))api('products/${p.id}','DELETE').then(loadProds)">حذف</button>`:""}</div></div></div>`;
+const ps=(b,v)=>b.closest(".fld").querySelector(".sz").value=v;
+function fp(e){const c=e.closest(".pc"),p=+c.querySelector(".p").value,d=+c.querySelector(".dc").value||0;c.querySelector(".fp").textContent=p&&d?`بعد الخصم: ${Math.round(p*(100-d)/100)} ج.م`:""}
+async function loadProds(){const d=await api("products");$("body").innerHTML=`<datalist id="cats">${[...new Set(d.map(p=>p.category))].map(c=>`<option value="${esc(c)}">`).join("")}</datalist><div class="card"><h3>تعديل جماعي (على كذا منتج مرة واحدة)</h3><p class="muted">اختاري القسم والموسم (أو سيبيهم "كل") وحطي النسبة، وبعدين اختاري العملية.</p><div class="f"><select id="bc"><option value="">كل الأقسام</option>${[...new Set(d.map(p=>p.category))].map(c=>`<option>${esc(c)}</option>`).join("")}</select><select id="bs"><option value="">كل المواسم</option><option value="summer">☀️ صيفي</option><option value="winter">❄️ شتوي</option></select><input id="bp" type="number" placeholder="النسبة %" style="width:110px"></div><div class="f" style="margin-top:8px"><button onclick="bulk('price_pct')">رفع الأسعار بالنسبة (سالب = تخفيض)</button><button onclick="bulk('discount_set')">تطبيق خصم</button><button class="d" onclick="bulk('discount_clear')">إلغاء كل الخصومات</button></div></div><h3>إضافة منتج جديد</h3>`+pcard({name:"",category:"",active:1,sizes:"",colors:""})+`<h3>المنتجات الحالية (${d.length})</h3>`+d.map(pcard).join("");document.querySelectorAll(".pc .p").forEach(fp)}
+async function bulk(act){const b={action:act,category:$("bc").value,season:$("bs").value,percent:$("bp").value};if(!confirm("تأكيد التعديل على المنتجات المحددة؟"))return;try{const r=await api("bulk","POST",b);say("تم تعديل "+r.changed+" منتج ✓");loadProds()}catch(e){e&&say(e.message,false)}}
+async function saveP(b){const c=b.closest(".pc"),id=c.dataset.id,v=s=>c.querySelector(s).value;
+ const x={name:v(".n"),price:v(".p"),discount:v(".dc"),category:v(".c"),season:v(".se"),badge:v(".bg"),sizes:v(".sz"),colors:v(".cl"),img:v(".i"),active:c.querySelector(".a").checked,soldout:c.querySelector(".so").checked};
+ try{await api(id?"products/"+id:"products",id?"PUT":"POST",x);say("تم الحفظ ✓");if(!id)loadProds()}catch(e){e&&say(e.message,false)}}
+// ---- العروض والكوبونات
+async function loadOffers(){
+  const d=await api("offers");
+  $("body").innerHTML=`<div class="card"><h3>عرض جديد (خصم تلقائي)</h3><p class="muted">بيتطبق على كل المنتجات أو على قسم معين، ولو المنتج ليه خصم خاص بياخد الأكبر. تاريخ الانتهاء اختياري.</p><div class="f"><input id="ot" placeholder="اسم العرض (مثلًا: تخفيضات الشتاء)"><select id="oc"><option value="">كل المنتجات</option>${d.categories.map(c=>`<option>${esc(c)}</option>`).join("")}</select><input id="op" type="number" placeholder="نسبة الخصم %" style="width:130px"><input id="oe" type="date"><button onclick="addO()">إضافة</button></div></div>`+
+  d.offers.map(o=>`<div class="card top"><span><b>${esc(o.title)}</b> — خصم ${o.percent}% على ${o.category?esc(o.category):"كل المنتجات"} ${o.ends?`حتى ${esc(o.ends)}`:""} ${o.active?"":"<span class='tag'>موقوف</span>"}</span><span class="f"><button class="s" onclick="run(api('offers/${o.id}','PATCH',{active:${o.active?0:1}}).then(loadOffers))">${o.active?"إيقاف":"تفعيل"}</button><button class="d" onclick="if(confirm('حذف العرض؟'))api('offers/${o.id}','DELETE').then(loadOffers)">حذف</button></span></div>`).join("")+
+  `<div class="card"><h3>كود خصم (العميلة بتكتبه في الطلب)</h3><div class="f"><input id="cc" placeholder="الكود مثلًا WELCOME10" style="direction:ltr"><input id="cp" type="number" placeholder="%" style="width:90px"><button onclick="addC()">إضافة</button></div></div>`+
+  d.coupons.map(c=>`<div class="card top"><span><b style="direction:ltr;display:inline-block">${esc(c.code)}</b> — خصم ${c.percent}% ${c.active?"":"<span class='tag'>موقوف</span>"}</span><span class="f"><button class="s" onclick="run(api('coupons/${esc(c.code)}','PATCH',{active:${c.active?0:1}}).then(loadOffers))">${c.active?"إيقاف":"تفعيل"}</button><button class="d" onclick="api('coupons/${esc(c.code)}','DELETE').then(loadOffers)">حذف</button></span></div>`).join("");
+}
+const addO=()=>run(api("offers","POST",{title:$("ot").value,category:$("oc").value,percent:$("op").value,ends:$("oe").value}).then(loadOffers));
+const addC=()=>run(api("coupons","POST",{code:$("cc").value,percent:$("cp").value}).then(loadOffers));
+// ---- إعدادات الموقع
+async function loadSettings(){
+  const d=await api("settings"),g={};d.schema.forEach(s=>(g[s[3]]=g[s[3]]||[]).push(s));
+  $("body").innerHTML=Object.entries(g).map(([n,l])=>`<div class="card"><h3>${n}</h3>`+l.map(([k,lab,t])=>{const v=esc(d.values[k]);let inp;
+   if(t==="area")inp=`<textarea data-k="${k}">${v}</textarea>`;
+   else if(t==="color")inp=`<input data-k="${k}" type="color" value="${v}">`;
+   else if(t==="bool")inp=`<select data-k="${k}"><option value="1" ${v==="1"?"selected":""}>نعم</option><option value="0" ${v==="0"?"selected":""}>لا</option></select>`;
+   else if(t==="num"||t==="pct")inp=`<input data-k="${k}" type="number" value="${v}">`;
+   else if(t==="img"||t==="img0")inp=`<div class="f"><img class="pv ${k==="logo"?"l":""}" ${v?`src="${U(v)}"`:""}><input data-k="${k}" value="${v}" style="flex:1;min-width:160px" oninput="this.parentNode.querySelector('.pv').src=U(this.value)"><button class="s" onclick="const i=this.parentNode.querySelector('input'),p=this.parentNode.querySelector('.pv');pick('image',x=>{i.value=x;p.src=U(x)})">رفع صورة</button>${t==="img0"?`<button class="s" onclick="this.parentNode.querySelector('input').value='';this.parentNode.querySelector('.pv').removeAttribute('src')">إزالة</button>`:""}</div>`;
+   else if(t==="video")inp=`<div class="f"><video class="pv" muted controls ${v?`src="${U(v)}"`:""}></video><input data-k="${k}" value="${v}" style="flex:1;min-width:160px"><button class="s" onclick="const i=this.parentNode.querySelector('input'),p=this.parentNode.querySelector('video');pick('video',x=>{i.value=x;p.src=U(x)})">رفع فيديو</button><button class="s" onclick="this.parentNode.querySelector('input').value='';this.parentNode.querySelector('video').removeAttribute('src')">إزالة الفيديو</button></div><div class="muted">الأفضل mp4 قصير (10-15 ثانية) وحجمه أقل من 10MB، والحد الأقصى 25MB.</div>`;
+   else inp=`<input data-k="${k}" value="${v}">`;
+   return `<div class="fld"><label>${lab}</label>${inp}</div>`}).join("")+`</div>`).join("")+`<button onclick="saveS()">حفظ كل الإعدادات</button>`;
+}
+async function saveS(){const values={};document.querySelectorAll("[data-k]").forEach(e=>values[e.dataset.k]=e.value);try{await api("settings","PUT",{values});say("تم حفظ الإعدادات ✓ — حدّثي صفحة الموقع وشوفي التغيير")}catch(e){e&&say(e.message,false)}}
+// ---- الأمان
+async function loadSec(){$("body").innerHTML=`<div class="card"><h3>تغيير اليوزر وكلمة السر</h3><p class="muted">اكتبي الباسورد الحالي (لازم)، وبعدها يوزر جديد و/أو باسورد جديد. بعد التغيير هتسجلي الدخول تاني.</p><div class="fld"><label>الباسورد الحالي</label><input id="cur" type="password" autocomplete="current-password"></div><div class="fld"><label>اليوزر الجديد (اختياري — 4 حروف على الأقل إنجليزي/أرقام)</label><input id="nu" autocomplete="off"></div><div class="fld"><label>الباسورد الجديد (اختياري — 10 حروف على الأقل)</label><input id="nw" type="password" autocomplete="new-password"></div><button onclick="chgPw()">حفظ</button></div>`}
+async function chgPw(){try{await api("password","POST",{current:$("cur").value,username:$("nu").value,new:$("nw").value});alert("تم التغيير، سجلي الدخول تاني");show(false)}catch(e){e&&say(e.message,false)}}
+if(T){show(true);tab("orders")}
+</script></body></html>
